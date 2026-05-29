@@ -1,52 +1,54 @@
-# 俄罗斯方块 (Tetris)
+# Tetris
 
-经典俄罗斯方块 Android 版，金砖质感风格，带消行碎裂特效。
+A classic Tetris game for Android with gold-brick visuals and line-clear shatter effects.
 
-## 下载安装
+## Download
 
-从 [Releases](../../releases) 下载 `俄罗斯方块.apk`，或从源码构建：
+Get the APK: [Tetris.apk](./Tetris.apk)
 
-```
-app/build/outputs/apk/release/俄罗斯方块.apk
-```
+Or download from [Releases](../../releases).
 
-### 安装前注意
+### Before Installing
 
-| 品牌 | 操作 |
-|------|------|
-| 小米 MIUI | 设置 → 开发者选项 → 关闭 MIUI 优化 |
-| 华为 EMUI | 设置 → 系统和更新 → 关闭纯净模式 |
-| OPPO ColorOS | 设置 → 安全 → 关闭外部来源应用检查 |
-| 其他 | 设置 → 安全 → 允许未知来源安装 |
+| Brand | Action |
+|-------|--------|
+| Xiaomi MIUI | Settings → Developer options → Turn off **MIUI optimization** |
+| Huawei EMUI | Settings → System & updates → Turn off **Pure mode** |
+| OPPO ColorOS | Settings → Security → Turn off **External source app check** |
+| Others | Settings → Security → Allow **unknown source installs** |
 
-## 操作
+## Controls
 
-| 按钮 | 功能 |
-|------|------|
-| ← → | 左右移动 |
-| ↻ | 旋转 |
-| ↓ 点击 | 下移一格 |
-| ↓ 长按 | 直接落底 |
-| 暂停 | 暂停 / 继续 |
+| Button | Action |
+|--------|--------|
+| ← → | Move left / right |
+| ↻ | Rotate |
+| ↓ tap | Soft drop |
+| ↓ hold | Hard drop |
+| Pause | Pause / Resume |
+| Restart | New game |
 
-## 从源码构建
+## Build from Source
 
 ```bash
-git clone https://github.com/你的用户名/Tetris.git
+git clone https://github.com/liangzhenzhen/Tetris.git
 cd Tetris
 
-# 配置 SDK 路径
-echo "sdk.dir=/你的AndroidSdk路径" > local.properties
+# Configure Android SDK path
+echo "sdk.dir=/path/to/Android/Sdk" > local.properties
 
-# 构建
+# Build
 ./gradlew assembleRelease
 ```
 
-## 技术
+APK will be at `app/build/outputs/apk/release/tetris-release.apk`.
 
-- Kotlin + AndroidX + Canvas 自定义绘制
+## Tech Stack
+
+- Kotlin + AndroidX
+- Custom Canvas rendering
 - minSdk 24 / targetSdk 33
-- 测试通过：小米 Mi 11 Lite (MIUI 13)
+- Tested on: Xiaomi Mi 11 Lite (MIUI 13)
 
 ## License
 
