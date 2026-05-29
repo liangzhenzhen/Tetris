@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "TetrisHTML"
+rootProject.name = "Tetris"
 include(":app")
