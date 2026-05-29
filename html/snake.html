@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Snake</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #1a1a2e;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; font-family: system-ui, sans-serif;
+    touch-action: manipulation;
+}
+.game-container { text-align: center; max-width: 420px; width: 100%; padding: 12px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #ffd700; }
+.title { font-size: 24px; font-weight: bold; color: #daa520; }
+.scores { display: flex; gap: 20px; font-size: 15px; }
+.scores span { color: #ffd700; font-weight: bold; }
+.score-label { color: #aaa; font-size: 12px; }
+canvas { display: block; margin: 0 auto; border: 2px solid #daa520; border-radius: 8px; background: #0f0f1a; }
+.canvas-wrapper { position: relative; display: inline-block; }
+.controls { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; margin-top: 12px; max-width: 320px; margin-left: auto; margin-right: auto; }
+.btn { padding: 16px; font-size: 22px; border: 1px solid #daa520; background: #2a2a3e; color: #ffd700; border-radius: 8px; cursor: pointer; user-select: none; }
+.btn:active { background: #3a3a5e; }
+.btn-up { grid-column: 2; }
+.btn-left { grid-column: 1; grid-row: 2; }
+.btn-right { grid-column: 3; grid-row: 2; }
+.btn-down { grid-column: 2; grid-row: 2; }
+.restart-btn { padding: 10px 24px; margin-top: 12px; font-size: 15px; border: 1px solid #daa520; background: transparent; color: #daa520; border-radius: 6px; cursor: pointer; }
+.overlay { position: absolute; top:0; left:0; right:0; bottom:0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.7); border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay .over-text { font-size: 28px; color: #ffd700; font-weight: bold; margin-bottom: 8px; }
+.overlay .over-score { font-size: 16px; color: #ccc; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="game-container">
+    <div class="header">
+        <div class="title">SNAKE</div>
+        <div class="scores">
+            <div><div class="score-label">Score</div><span id="score">0</span></div>
+            <div><div class="score-label">Best</div><span id="best">0</span></div>
+        </div>
+    </div>
+    <div class="canvas-wrapper">
+        <canvas id="c" width="400" height="400"></canvas>
+        <div class="overlay" id="overlay">
+            <div class="over-text" id="ot">Game Over</div>
+            <div class="over-score" id="os"></div>
+            <button class="restart-btn" onclick="restart()">Restart</button>
+        </div>
+    </div>
+    <div class="controls">
+        <button class="btn btn-up"    onpointerdown="setDir(0,-1)">▲</button>
+        <button class="btn btn-left"  onpointerdown="setDir(-1,0)">◀</button>
+        <button class="btn btn-down"  onpointerdown="setDir(0,1)">▼</button>
+        <button class="btn btn-right" onpointerdown="setDir(1,0)">▶</button>
+    </div>
+    <button class="restart-btn" onclick="restart()">Restart</button>
+</div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const G=20,W=cv.width/G|0,H=cv.height/G|0;
+let snake, food, dx, dy, ndx, ndy, score, best, loop, running, spd;
+const se=document.getElementById('score'),be=document.getElementById('best');
+const ov=document.getElementById('overlay'),ot=document.getElementById('ot'),os=document.getElementById('os');
+best=+localStorage.getItem('sb')||0; be.textContent=best;
+
+function init(){
+    let mx=W>>1, my=H>>1;
+    snake=[{x:mx,y:my},{x:mx-1,y:my},{x:mx-2,y:my}];
+    dx=1; dy=0; ndx=1; ndy=0; score=0; spd=130;
+    se.textContent='0'; ov.classList.remove('show');
+    spawnFood();
+}
+function spawnFood(){
+    do{food={x:Math.random()*W|0, y:Math.random()*H|0}}while(snake.some(s=>s.x===food.x&&s.y===food.y));
+}
+function setDir(x,y){
+    if(!running||dx+x===0&&dy+y===0)return; ndx=x; ndy=y;
+}
+document.onkeydown=e=>{
+    const k={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};
+    k[e.key]?(e.preventDefault(),setDir(...k[e.key])):e.key===' '&&(e.preventDefault(),restart());
+};
+function step(){
+    dx=ndx; dy=ndy;
+    let h={x:snake[0].x+dx, y:snake[0].y+dy};
+    if(h.x<0||h.x>=W||h.y<0||h.y>=H||snake.some(s=>s.x===h.x&&s.y===h.y)) return over();
+    snake.unshift(h);
+    if(h.x===food.x&&h.y===food.y){score+=10; se.textContent=score; spawnFood(); spd=Math.max(60,130-(score/50|0)*5)}
+    else snake.pop();
+    draw(); loop=setTimeout(step,spd);
+}
+function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    // grid
+    ctx.strokeStyle='#1a1a2e'; ctx.lineWidth=0.5;
+    for(let r=0;r<=H;r++){ctx.beginPath();ctx.moveTo(0,r*G);ctx.lineTo(cv.width,r*G);ctx.stroke();}
+    for(let c=0;c<=W;c++){ctx.beginPath();ctx.moveTo(c*G,0);ctx.lineTo(c*G,cv.height);ctx.stroke();}
+    // food glow
+    let fx=food.x*G, fy=food.y*G, fg=ctx.createRadialGradient(fx+6,fy+6,2,fx+10,fy+10,12);
+    fg.addColorStop(0,'#fff8dc'); fg.addColorStop(0.5,'#ffd700'); fg.addColorStop(1,'#b8860b');
+    ctx.fillStyle=fg; ctx.shadowColor='#ffd700'; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(fx+G/2,fy+G/2,G/2-2,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+    // snake
+    for(let i=snake.length-1;i>=0;i--){
+        let s=snake[i],sx=s.x*G+1,sy=s.y*G+1,sz=G-2,t=i/snake.length;
+        let lg=lerp('#ffe066','#daa520',t), dk=lerp('#daa520','#8b6508',t);
+        let g=ctx.createLinearGradient(sx,sy,sx,sy+sz);
+        g.addColorStop(0,lg); g.addColorStop(0.5,lerp(lg,dk,0.3)); g.addColorStop(1,dk);
+        ctx.fillStyle=g; ctx.strokeStyle='#b8860b'; ctx.lineWidth=0.8;
+        ctx.beginPath(); rr(sx,sy,sz,sz,3); ctx.fill(); ctx.stroke();
+        ctx.fillStyle='rgba(255,255,255,0.15)';
+        ctx.beginPath(); rr(sx+2,sy+1,sz-4,sz*0.4,2); ctx.fill();
+        if(i===0){ // eyes
+            ctx.fillStyle='#1a1a2e';
+            let ex=sx+sz/2, ey=sy+sz/3, er=2.5;
+            ctx.beginPath(); ctx.arc(ex+dx*3-3,ey+dy*3-3,er,0,7); ctx.fill();
+            ctx.beginPath(); ctx.arc(ex+dx*3+3,ey+dy*3-3,er,0,7); ctx.fill();
+        }
+    }
+}
+function rr(x,y,w,h,r){ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);}
+function lerp(a,b,t){
+    let ah=parseInt(a.slice(1),16),bh=parseInt(b.slice(1),16),ar=ah>>16&0xff,ag=ah>>8&0xff,ab=ah&0xff,br=bh>>16&0xff,bg=bh>>8&0xff,bb=bh&0xff;
+    return '#'+((1<<24)|(Math.round(ar+(br-ar)*t)<<16)|(Math.round(ag+(bg-ag)*t)<<8)|Math.round(ab+(bb-ab)*t)).toString(16).slice(1);
+}
+function over(){
+    running=false; clearTimeout(loop);
+    if(score>best){best=score; localStorage.setItem('sb',best); be.textContent=best; ot.textContent='New Best!';}
+    else ot.textContent='Game Over';
+    os.textContent='Score: '+score; ov.classList.add('show');
+}
+function start(){if(!running){running=true; loop=setTimeout(step,spd)}}
+function restart(){clearTimeout(loop); running=false; init(); draw(); start();}
+init(); draw(); start();
+</script>
+</body>
+</html>
